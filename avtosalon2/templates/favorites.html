@@ -1,0 +1,26 @@
+{% extends 'base.html' %}
+{% from '_macros.html' import car_card with context %}
+{% block title %}Избранное — Автосалон{% endblock %}
+{% block content %}
+<section class="page-head">
+  <div class="container">
+    <h1>Избранное</h1>
+    <p id="fav-subtitle">Сохранено: {{ cars|length }}. Нажмите на сердечко на карточке, чтобы убрать авто из списка.</p>
+  </div>
+</section>
+<section class="section">
+  <div class="container">
+    {% if not cars %}
+      <div class="empty">
+        <h3>Список пуст</h3>
+        <p>Добавляйте автомобили в избранное с карточки модели или из каталога.</p>
+        <a class="btn btn--primary" href="{{ url_for('catalog') }}">В каталог</a>
+      </div>
+    {% else %}
+      <div class="grid grid--3" id="fav-grid">
+        {% for c in cars %}{{ car_card(c) }}{% endfor %}
+      </div>
+    {% endif %}
+  </div>
+</section>
+{% endblock %}

@@ -1,0 +1,95 @@
+{% extends 'base.html' %}
+
+{% block title %}Кредитный калькулятор — Автосалон{% endblock %}
+
+{% block content %}
+<section class="page-head">
+  <div class="container">
+    <h1>Кредитный калькулятор</h1>
+    <p>Рассчитайте ежемесячный платёж и переплату по аннуитетной формуле</p>
+  </div>
+</section>
+
+<section class="section">
+  <div class="container credit-layout">
+    <form method="get" class="panel credit-form" id="credit-form">
+      <h2>Параметры кредита</h2>
+
+      <div class="field">
+        <label for="price">Стоимость автомобиля, ₽</label>
+        <input type="number" id="price" name="price" min="100000" step="50000" value="{{ form.price }}" required>
+      </div>
+
+      <div class="field">
+        <label for="down">Первоначальный взнос, ₽</label>
+        <input type="number" id="down" name="down" min="0" step="50000" value="{{ form.down }}">
+        <input type="range" id="down-range" min="0" max="{{ form.price }}" step="50000" value="{{ form.down }}">
+        <output id="down-out">{{ form.down | money }} ({{ (form.down / form.price * 100) | round | int }}%)</output>
+      </div>
+
+      <div class="field">
+        <label for="years">Срок кредита: <span id="years-out">{{ form.years }} лет</span></label>
+        <input type="range" id="years" name="years" min="1" max="10" step="1" value="{{ form.years }}">
+      </div>
+
+      <div class="field">
+        <label for="rate">Процентная ставка, % годовых</label>
+        <input type="number" id="rate" name="rate" min="0.1" max="40" step="0.1" value="{{ form.rate }}">
+      </div>
+
+      <button class="btn btn--primary btn--block" type="submit">Обновить расчёт</button>
+      <p class="muted small">Расчёт предварительный и не является публичной офертой.</p>
+    </form>
+
+    <div class="credit-result">
+      <div class="panel panel--accent">
+        <span class="credit-result__label">Ежемесячный платёж</span>
+        <strong class="credit-result__value" id="monthly">{{ summary.monthly | money }}</strong>
+        <div class="credit-result__grid">
+          <div><span>Сумма кредита</span><b id="c-body">{{ summary.body | money }}</b></div>
+          <div><span>Переплата</span><b id="overpay">{{ summary.overpay | money }}</b></div>
+          <div><span>Всего выплатите</span><b id="total">{{ summary.total | money }}</b></div>
+          <div><span>Срок</span><b id="months">{{ summary.months }} мес.</b></div>
+        </div>
+      </div>
+
+      <div class="panel">
+        <div class="chart" id="chart" data-body="{{ summary.body }}" data-monthly="{{ summary.monthly }}"></div>
+      </div>
+
+      <div class="panel">
+        <h2>График платежей</h2>
+        <div class="table-wrap">
+          <table class="specs">
+            <thead>
+              <tr>
+                <th scope="col">№</th>
+                <th scope="col">Платёж</th>
+                <th scope="col">Проценты</th>
+                <th scope="col">Тело долга</th>
+                <th scope="col">Остаток</th>
+              </tr>
+            </thead>
+            <tbody id="schedule-body">
+              {% for n, pay, interest, principal, balance in schedule %}
+              <tr>
+                <td>{{ n }}</td>
+                <td>{{ pay | money }}</td>
+                <td>{{ interest | money }}</td>
+                <td>{{ principal | money }}</td>
+                <td>{{ balance | money }}</td>
+              </tr>
+              {% endfor %}
+            </tbody>
+          </table>
+        </div>
+        {% if total_months > schedule|length %}
+        <p class="muted small" id="schedule-note">Показаны первые {{ schedule|length }} из {{ total_months }} платежей.</p>
+        {% endif %}
+      </div>
+    </div>
+  </div>
+</section>
+{% endblock %}{% block scripts %}
+<script src="{{ url_for('static', filename='js/credit-chart.js') }}"></script>
+{% endblock %}

@@ -1,0 +1,278 @@
+{% extends 'base.html' %}
+{% from '_macros.html' import car_card with context %}
+
+{% set accent = brand_accent(car.brand) %}
+{% set dark = brand_dark(car.brand) %}
+{% set title = car.title %}
+{% set is_fav = car.id in fav_ids %}
+{% set is_compared = car.id in compare_ids %}
+{% set specs = [
+('Марка / модель', car.title),
+('Год выпуска', car.year),
+('Пробег', car.mileage | number_format ~ ' км'),
+('Кузов', car.body),
+('Цвет', car.color),
+('Двигатель', car.engine ~ ' (' ~ car.power ~ ' л.с.)'),
+('Топливо', car.fuel),
+('Коробка передач', car.transmission),
+('Привод', car.drive),
+('Страна производства', car.country),
+('Состояние', car.condition),
+('VIN', car.vin)
+] %}
+
+{% block title %}{{ title }} — купить за {{ price_label(car.price) }}{% endblock %}
+{% block description %}{{ car.description | truncate(160) }}{% endblock %}
+
+{% block head %}
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "Vehicle",
+  "name": {{ title | tojson }},
+  "brand": { "@type": "Brand", "name": {{ car.brand | tojson }} },
+  "model": {{ car.model | tojson }},
+  "vehicleModelDate": {{ car.year }},
+  "mileageFromOdometer": { "@type": "QuantitativeValue", "value": {{ car.mileage }} },
+  "fuelType": {{ car.fuel | tojson }},
+  "vehicleTransmission": {{ car.transmission | tojson }},
+  "offers": {
+    "@type": "Offer",
+    "price": {{ car.price }},
+    "priceCurrency": "RUB",
+    "availability": "https://schema.org/InStock"
+  }
+}
+</script>
+{% endblock %}
+
+{% block content %}
+<section class="page-head car-head" style="--brand: {{ dark }}; --accent: {{ accent }};">
+  <div class="container">
+    <nav class="crumbs">
+      <a href="{{ url_for('index') }}">Главная</a> /
+      <a href="{{ url_for('catalog') }}">Каталог</a> /
+      <a href="{{ url_for('catalog', body=car.body) }}">{{ car.body }}</a> /
+      <span>{{ title }}</span>
+    </nav>
+    <div class="car-head__row">
+      <div>
+        <h1>{{ title }}</h1>
+        <p>{{ car.year }} · {{ car.mileage | number_format }} км · {{ car.engine }} · {{ car.transmission }}</p>
+      </div>
+      {% if is_admin %}<a class="btn btn--outline btn--sm car-head__edit" href="{{ url_for('admin_car_edit', car_id=car.id) }}">Редактировать</a>{% endif %}
+      <div class="car-head__rating">
+        {% if rating.count %}
+        <strong>{{ rating.avg }}</strong>
+        <span class="stars">{{ rating.avg | stars }}</span>
+        <em>{{ rating.count }} {{ 'отзыв' if rating.count % 10 == 1 else 'отзывов' }}</em>
+        {% else %}
+        <span class="muted">Нет отзывов</span>
+        {% endif %}
+      </div>
+    </div>
+  </div>
+</section>
+
+<section class="section">
+  <div class="container car-layout">
+    <div class="car-main">
+      <div class="car-gallery" data-gallery>
+        <div class="car-gallery__main">
+          {% if car.photo %}
+          <img src="{{ url_for('static', filename='uploads/' ~ car.photo) }}" alt="{{ title }}" id="gallery-main">
+          {% else %}
+          <div class="car-visual car-visual--{{ body_class(car.body) }}">
+            <span class="car-visual__body"></span>
+            <span class="car-visual__cabin"></span>
+            <span class="car-visual__wheel car-visual__wheel--left"></span>
+            <span class="car-visual__wheel car-visual__wheel--right"></span>
+          </div>
+          {% endif %}
+        </div>
+        <div class="car-gallery__thumbs">
+          {% for c in car_colors %}
+          <span class="swatch" style="background: {{ c.hex }};" title="{{ c.name }}"></span>
+          {% endfor %}
+        </div>
+        {% if photos|length > 1 %}
+        <div class="car-gallery__strip">
+          {% for p in photos %}
+          <img src="{{ url_for('static', filename='uploads/' ~ p.filename) }}"
+            alt="{{ title }} — фото {{ loop.index }}">
+          {% endfor %}
+        </div>
+        {% endif %}
+      </div>
+
+      <div class="panel">
+        <h2>Описание</h2>
+        <p class="lead">{{ car.description }}</p>
+        <ul class="tags">
+          {% for f in car.features %}<li>{{ f }}</li>{% endfor %}
+        </ul>
+      </div>
+
+      <div class="panel">
+        <h2>Характеристики</h2>
+        <table class="specs">
+          <tbody>
+            {% for label, value in specs %}
+            <tr>
+              <th scope="row">{{ label }}</th>
+              <td>{{ value }}</td>
+            </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+
+      <div class="panel">
+        <h2>Кредит под {{ (car.price * 0.8 / 60) | round | int | number_format }} ₽/мес</h2>
+        <p>Расчёт на 5 лет, взнос 20%, ставка 9,9% годовых.</p>
+        <div class="credit-mini">
+          <div><strong>{{ credit.monthly | money }}</strong><span>ежемесячный платёж</span></div>
+          <div><strong>{{ credit.overpay | money }}</strong><span>переплата по процентам</span></div>
+          <div><strong>{{ credit.months }}</strong><span>месяцев</span></div>
+        </div>
+        <a class="btn btn--outline btn--sm" href="{{ url_for('credit_page', price=car.price) }}">
+          Подробный расчёт
+        </a>
+      </div>
+
+      <div class="panel" id="reviews">
+        <h2>Отзывы покупателей {% if rating.count %}<span class="badge-count-inline">{{ rating.count }}</span>{% endif
+          %}</h2>
+
+        {% if reviews %}
+        <div class="reviews">
+          {% for r in reviews %}
+          <article class="review">
+            <header>
+              <strong>{{ r.author }}</strong>
+              <span class="stars">{{ r.rating | stars }}</span>
+              <time>{{ r.date }}</time>
+            </header>
+            <p>{{ r.text }}</p>
+          </article>
+          {% endfor %}
+        </div>
+        {% else %}
+        <p class="muted">Пока нет отзывов. Будьте первым!</p>
+        {% endif %}
+
+        <h3>Оставить отзыв</h3>
+        <form method="post" action="{{ url_for('add_review', car_id=car.id) }}" class="form">
+          <input type="hidden" name="_csrf" value="{{ csrf_token }}">
+          <div class="field">
+            <label for="author">Ваше имя *</label>
+            <input type="text" id="author" name="author" required minlength="2"
+              value="{{ current_user['name'] if current_user }}" placeholder="Иван">
+          </div>
+          <div class="field">
+            <label for="rating">Оценка</label>
+            <select id="rating" name="rating">
+              {% for r in [5, 4, 3, 2, 1] %}
+              <option value="{{ r }}">{{ r }} — {{ ['ужасно','плохо','нормально','хорошо','отлично'][r-1] }}</option>
+              {% endfor %}
+            </select>
+          </div>
+          <div class="field">
+            <label for="text">Отзыв *</label>
+            <textarea id="text" name="text" rows="4" required minlength="10"
+              placeholder="Что понравилось, что нет?"></textarea>
+          </div>
+          <button class="btn btn--primary" type="submit">Опубликовать отзыв</button>
+        </form>
+      </div>
+    </div>
+
+    <aside class="car-side">
+      <div class="panel panel--sticky">
+        <span class="car-side__label">Цена</span>
+        <span class="car-side__price">{{ price_label(car.price) }}</span>
+        <span class="car-side__credit">или {{ credit.monthly | money }}/мес в кредит</span>
+
+        <a class="btn btn--primary btn--block" href="#order-form">Оставить заявку</a>
+        <a class="btn btn--outline btn--block" href="tel:{{ contacts.phone_digits }}">{{ contacts.phone }}</a>
+
+        <div class="car-side__tools">
+          <form method="post" action="{{ url_for('toggle_favorite', car_id=car.id) }}" class="js-fav"
+            data-id="{{ car.id }}">
+            <input type="hidden" name="_csrf" value="{{ csrf_token }}">
+            <button class="btn btn--ghost btn--block {{ 'is-active' if is_fav }}" type="submit">
+              <span aria-hidden="true">♥</span> {{ 'В избранном' if is_fav else 'В избранное' }}
+            </button>
+          </form>
+          <form method="post" action="{{ url_for('compare_toggle') }}" class="js-compare" data-id="{{ car.id }}">
+            <input type="hidden" name="_csrf" value="{{ csrf_token }}">
+            <input type="hidden" name="car_id" value="{{ car.id }}">
+            <button class="btn btn--ghost btn--block {{ 'is-active' if is_compared }}" type="submit">
+              <span aria-hidden="true">⇄</span> {{ 'В сравнении' if is_compared else 'Сравнить' }}
+            </button>
+          </form>
+        </div>
+
+        <ul class="car-side__list">
+          <li>Официальная гарантия до 24 мес.</li>
+          <li>Диагностика перед выдачей</li>
+          <li>Trade-in вашего авто</li>
+          <li>Доставка в ваш город</li>
+          <li>{{ car.views }} {{ 'просмотр' if car.views % 10 == 1 else 'просмотров' }}</li>
+        </ul>
+      </div>
+    </aside>
+  </div>
+</section>
+
+<section class="section section--alt" id="order-form">
+  <div class="container">
+    <div class="panel">
+      {% if ordered %}
+      <h2>Спасибо, заявка принята!</h2>
+      <p class="lead">Мы свяжемся с вами по указанному номеру в течение 15 минут и подготовим документы по {{ title }}.
+      </p>
+      <a class="btn btn--primary" href="{{ url_for('catalog') }}">Вернуться в каталог</a>
+      {% else %}
+      <h2>Заявка на покупку</h2>
+      <p class="lead">{{ title }}, {{ car.year }} — {{ price_label(car.price) }}</p>
+      <form method="post" action="{{ url_for('order') }}" class="form form--grid">
+        <input type="hidden" name="_csrf" value="{{ csrf_token }}">
+        <input type="hidden" name="car_id" value="{{ car.id }}">
+        <div class="field">
+          <label for="name">Имя *</label>
+          <input type="text" id="name" name="name" required minlength="2"
+            value="{{ current_user['name'] if current_user }}" placeholder="Иван">
+        </div>
+        <div class="field">
+          <label for="phone">Телефон *</label>
+          <input type="tel" id="phone" name="phone" required minlength="6"
+            value="{{ current_user['phone'] if current_user }}" placeholder="+7 900 000-00-00">
+        </div>
+        <div class="field">
+          <label for="email">E-mail</label>
+          <input type="email" id="email" name="email" value="{{ current_user['email'] if current_user }}"
+            placeholder="you@mail.ru">
+        </div>
+        <div class="field">
+          <label for="comment">Комментарий</label>
+          <input type="text" id="comment" name="message" placeholder="Удобное время звонка">
+        </div>
+        <button class="btn btn--primary btn--lg" type="submit">Отправить заявку</button>
+      </form>
+      {% endif %}
+    </div>
+  </div>
+</section>
+
+<section class="section">
+  <div class="container">
+    <div class="section__head">
+      <h2>Похожие автомобили</h2>
+    </div>
+    <div class="grid grid--3">
+      {% for c in similar %}{{ car_card(c) }}{% endfor %}
+    </div>
+  </div>
+</section>
+{% endblock %}

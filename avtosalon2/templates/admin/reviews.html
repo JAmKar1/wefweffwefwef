@@ -1,0 +1,41 @@
+{% extends 'base.html' %}
+{% block title %}Админ — отзывы{% endblock %}
+{% block content %}
+<section class="page-head">
+  <div class="container">
+    <h1>Отзывы</h1>
+    <p>Модерация комментариев покупателей</p>
+  </div>
+  <div class="container admin-nav"><a class="chip" href="{{ url_for('admin_dashboard') }}">Дашборд</a></div>
+</section>
+<section class="section">
+  <div class="container">
+    {% for r in reviews %}
+    <div class="panel admin-review">
+      <div class="admin-review__head">
+        <b>{{ r['author'] }}</b> · {{ r['rating'] }}★ · авто #{{ r['car_id'] }} · {{ r['created_at'][:10] }}
+        <span class="pill">{{ 'опубликован' if r['is_moderated'] else 'скрыт' }}</span>
+      </div>
+      <p>{{ r['text'] }}</p>
+      <div class="row-actions">
+        <form method="post">
+          <input type="hidden" name="_csrf" value="{{ csrf_token }}">
+          <input type="hidden" name="id" value="{{ r['id'] }}">
+          <button class="btn btn--ghost btn--sm">{{ 'Скрыть' if r['is_moderated'] else 'Опубликовать' }}</button>
+        </form>
+        <form method="post">
+          <input type="hidden" name="_csrf" value="{{ csrf_token }}">
+          <input type="hidden" name="id" value="{{ r['id'] }}">
+          <input type="hidden" name="action" value="delete">
+          <button class="btn btn--danger btn--sm">Удалить</button>
+        </form>
+      </div>
+    </div>
+    {% else %}
+    <div class="empty">
+      <p>Отзывов пока нет.</p>
+    </div>
+    {% endfor %}
+  </div>
+</section>
+{% endblock %}

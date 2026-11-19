@@ -1,0 +1,53 @@
+{% extends 'base.html' %}
+{% set status_ru = {'new': 'Новая', 'in_progress': 'В работе', 'done': 'Закрыта'} %}
+{% set kind_ru = {'order': 'Покупка авто', 'contact': 'Обратная связь', 'tradein': 'Trade-in', 'credit': 'Кредит'} %}
+{% block title %}Админ — заявки{% endblock %}
+{% block content %}
+<section class="page-head">
+  <div class="container">
+    <h1>Заявки ({{ stats.total }})</h1>
+    <p>Новых: {{ stats.new or 0 }} · в работе: {{ stats.in_progress or 0 }} · закрыто: {{ stats.done or 0 }}</p>
+  </div>
+  <div class="container admin-nav">
+    <a class="chip" href="{{ url_for('admin_dashboard') }}">← Панель</a>
+    <a class="chip" href="{{ url_for('admin_orders') }}">Все</a>
+    <a class="chip" href="{{ url_for('admin_orders', status='new') }}">Новые</a>
+    <a class="chip" href="{{ url_for('admin_orders', status='in_progress') }}">В работе</a>
+    <a class="chip" href="{{ url_for('admin_orders', status='done') }}">Закрытые</a>
+  </div>
+</section>
+<section class="section">
+  <div class="container table-wrap">
+    <table class="table">
+      <thead><tr><th>Дата</th><th>Клиент</th><th>Тип и автомобиль</th><th>Сообщение</th><th>Статус</th><th></th></tr></thead>
+      <tbody>
+        {% for o in orders %}
+        <tr class="{{ 'row-new' if o['status']=='new' }}">
+          <td class="small">{{ o['created_at'][:16] }}</td>
+          <td><b>{{ o['name'] }}</b><br><a class="link" href="tel:{{ o['phone'] }}">{{ o['phone'] }}</a>{% if o['email'] %}<br><a class="link small" href="mailto:{{ o['email'] }}">{{ o['email'] }}</a>{% endif %}</td>
+          <td>{{ kind_ru.get(o['kind'], o['kind']) }}{% if o['car_id'] %}<br><a class="link" href="{{ url_for('car_details', car_id=o['car_id']) }}">{{ titles.get(o['car_id'], '#' ~ o['car_id']) }}</a>{% endif %}</td>
+          <td class="small">{{ o['message'] or '—' }}</td>
+          <td>
+            <form method="post" class="row-form">
+              <input type="hidden" name="_csrf" value="{{ csrf_token }}">
+              <input type="hidden" name="id" value="{{ o['id'] }}">
+              <select name="status" data-autosubmit>
+                {% for s in ['new','in_progress','done'] %}<option value="{{ s }}" {{ 'selected' if o['status']==s }}>{{ status_ru[s] }}</option>{% endfor %}
+              </select>
+            </form>
+          </td>
+          <td>
+            <form method="post" data-confirm="Удалить заявку от {{ o['name'] }}?">
+              <input type="hidden" name="_csrf" value="{{ csrf_token }}">
+              <input type="hidden" name="id" value="{{ o['id'] }}">
+              <input type="hidden" name="action" value="delete">
+              <button class="btn btn--danger btn--sm" title="Удалить">×</button>
+            </form>
+          </td>
+        </tr>
+        {% else %}<tr><td colspan="6" class="muted">Заявок нет.</td></tr>{% endfor %}
+      </tbody>
+    </table>
+  </div>
+</section>
+{% endblock %}

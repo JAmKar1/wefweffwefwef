@@ -1,0 +1,67 @@
+{% extends 'base.html' %}
+{% macro sel(name, label, options, current) %}
+<div class="field"><label for="f-{{ name }}">{{ label }}</label>
+  <select id="f-{{ name }}" name="{{ name }}">
+    {% for o in options %}<option value="{{ o }}" {{ 'selected' if current == o }}>{{ o }}</option>{% endfor %}
+  </select></div>
+{% endmacro %}
+{% block title %}{{ 'Редактирование' if action=='edit' else 'Новый автомобиль' }} — админ{% endblock %}
+{% block content %}
+<section class="page-head">
+  <div class="container">
+    <h1>{{ 'Редактирование: ' ~ car['brand'] ~ ' ' ~ car['model'] if action=='edit' else 'Новый автомобиль' }}</h1>
+  </div>
+  <div class="container admin-nav"><a class="chip" href="{{ url_for('admin_cars') }}">← Все автомобили</a></div>
+</section>
+<section class="section">
+  <div class="container">
+    <form method="post" class="panel form form--grid">
+      <input type="hidden" name="_csrf" value="{{ csrf_token }}">
+      <div class="field"><label for="f-brand">Марка *</label><input id="f-brand" name="brand" list="brands-list" value="{{ car['brand'] if car else '' }}" required>
+        <datalist id="brands-list">{% for b in brand_list %}<option value="{{ b }}">{% endfor %}</datalist></div>
+      <div class="field"><label for="f-model">Модель *</label><input id="f-model" name="model" value="{{ car['model'] if car else '' }}" required></div>
+      <div class="field"><label for="f-year">Год *</label><input id="f-year" name="year" type="number" min="1990" max="2027" value="{{ car['year'] if car else 2024 }}" required></div>
+      <div class="field"><label for="f-price">Цена, ₽ *</label><input id="f-price" name="price" type="number" min="0" step="1000" value="{{ car['price'] if car else '' }}" required></div>
+      <div class="field"><label for="f-mileage">Пробег, км</label><input id="f-mileage" name="mileage" type="number" min="0" value="{{ car['mileage'] if car else 0 }}"></div>
+      <div class="field"><label for="f-power">Мощность, л.с.</label><input id="f-power" name="power" type="number" min="0" value="{{ car['power'] if car else 0 }}"></div>
+      {{ sel('body', 'Кузов', ['Седан','Кроссовер','Внедорожник','Хэтчбек','Универсал','Купе','Минивэн'], car['body'] if car else 'Седан') }}
+      {{ sel('fuel', 'Топливо', ['Бензин','Дизель','Гибрид','Электро'], car['fuel'] if car else 'Бензин') }}
+      {{ sel('transmission', 'Коробка', ['Автомат','Механика','Вариатор','Робот'], car['transmission'] if car else 'Автомат') }}
+      {{ sel('drive', 'Привод', ['Передний','Задний','Полный'], car['drive'] if car else 'Передний') }}
+      {{ sel('condition', 'Состояние', ['С пробегом','Новый'], car['condition'] if car else 'С пробегом') }}
+      <div class="field"><label for="f-engine">Двигатель</label><input id="f-engine" name="engine" placeholder="2.0 TSI" value="{{ car['engine'] if car else '' }}"></div>
+      <div class="field"><label for="f-country">Страна</label><input id="f-country" name="country" value="{{ car['country'] if car else '' }}"></div>
+      <div class="field"><label for="f-color">Цвет</label><input id="f-color" name="color" value="{{ car['color'] if car else '' }}"></div>
+      <div class="field"><label for="f-vin">VIN</label><input id="f-vin" name="vin" maxlength="17" value="{{ car['vin'] if car else '' }}"></div>
+      <div class="field field--wide"><label for="f-features">Комплектация (через запятую)</label><input id="f-features" name="features" placeholder="Кожаный салон, Камера 360°" value="{{ (car['features'] | join(', ')) if car and car['features'] else '' }}"></div>
+      <div class="field field--wide"><label for="f-desc">Описание</label><textarea id="f-desc" name="description" rows="4">{{ car['description'] if car else '' }}</textarea></div>
+      <button class="btn btn--primary btn--lg" type="submit">Сохранить</button>
+    </form>
+
+    {% if action == 'edit' %}
+    <div class="panel" style="margin-top:24px">
+      <h2>Фотографии</h2>
+      <form method="post" action="{{ url_for('upload_photo', car_id=car_id) }}" enctype="multipart/form-data" class="row-form" style="margin-bottom:18px">
+        <input type="hidden" name="_csrf" value="{{ csrf_token }}">
+        <input type="file" name="photo" accept="image/png,image/jpeg,image/webp,image/gif" required style="max-width:340px">
+        <label class="switch" style="margin:0"><input type="checkbox" name="is_main" value="1"><span>Сделать главным</span></label>
+        <button class="btn btn--primary btn--sm" type="submit">Загрузить</button>
+      </form>
+      <div class="photo-grid">
+        {% for p in photos %}
+        <figure class="photo-item">
+          <img src="{{ url_for('static', filename='uploads/' ~ p.filename) }}" alt="">
+          {% if p.is_main %}<span class="badge badge--new">Главное</span>{% endif %}
+          <form method="post" action="{{ url_for('delete_photo', photo_id=p.id) }}" data-confirm="Удалить это фото?">
+            <input type="hidden" name="_csrf" value="{{ csrf_token }}">
+            <input type="hidden" name="car_id" value="{{ car_id }}">
+            <button class="btn btn--danger btn--sm" type="submit">Удалить</button>
+          </form>
+        </figure>
+        {% else %}<p class="muted">Фотографий пока нет.</p>{% endfor %}
+      </div>
+    </div>
+    {% else %}<p class="muted" style="margin-top:14px">Фотографии можно будет загрузить сразу после сохранения.</p>{% endif %}
+  </div>
+</section>
+{% endblock %}

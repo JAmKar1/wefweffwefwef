@@ -1,0 +1,177 @@
+<!DOCTYPE html>
+<html lang="ru">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>{% block title %}Автосалон «Премиум Моторс»{% endblock %}</title>
+  <meta name="description"
+    content="{% block description %}Автосалон полного цикла: продажа автомобилей с пробегом, кредитование, trade-in, сервис и гарантия.{% endblock %}">
+  <meta name="keywords" content="автосалон, купить автомобиль, автомобили с пробегом, trade-in, автокредит">
+  <meta property="og:type" content="website">
+  <meta property="og:site_name" content="Премиум Моторс">
+  <meta property="og:title" content="{{ self.title() }}">
+  <meta property="og:description" content="{{ self.description() }}">
+  <link rel="icon"
+    href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🚗</text></svg>">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Oswald:wght@500;600&family=Onest:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+  {% block head %}{% endblock %}
+</head>
+
+<body>
+
+  {% if is_admin %}
+  <div class="adminbar">
+    <div class="container adminbar__inner">
+      <span>Режим администратора</span>
+      <a href="{{ url_for('admin_orders') }}">Заявки{% if new_orders %} <b>{{ new_orders }} новых</b>{% endif %}</a>
+      <a href="{{ url_for('admin_cars') }}">Автомобили</a>
+      <a href="{{ url_for('admin_cars') }}">Фото</a>
+      <a href="{{ url_for('admin_dashboard') }}">Панель</a>
+    </div>
+  </div>
+  {% endif %}
+  <header class="topbar">
+    <div class="container topbar__inner">
+      <span>{{ contacts.address }}</span>
+      <span class="topbar__work">{{ contacts.work }}</span>
+      <a href="mailto:{{ contacts.email }}" class="topbar__mail">{{ contacts.email }}</a>
+      <a href="tel:{{ contacts.phone_digits }}" class="topbar__phone">{{ contacts.phone }}</a>
+    </div>
+  </header>
+
+  <header class="header">
+    <div class="container header__inner">
+      <a class="logo" href="{{ url_for('index') }}">
+        <span class="logo__mark">ПМ</span>
+        <span class="logo__text">Премиум<strong>Моторс</strong></span>
+      </a>
+
+      <form class="header__search" method="get" action="{{ url_for('catalog') }}" role="search">
+        <input type="search" id="global-search" name="q" placeholder="Марка или модель" autocomplete="off"
+          aria-label="Поиск автомобиля">
+        <ul class="suggest" id="suggest" hidden></ul>
+      </form>
+
+      <nav class="nav" id="nav">
+        <a href="{{ url_for('index') }}" class="{{ 'active' if request.endpoint == 'index' }}">Главная</a>
+        <a href="{{ url_for('catalog') }}" class="{{ 'active' if request.endpoint == 'catalog' }}">Каталог</a>
+        <a href="{{ url_for('credit_page') }}" class="{{ 'active' if request.endpoint == 'credit_page' }}">Кредит</a>
+        <a href="{{ url_for('trade_in') }}" class="{{ 'active' if request.endpoint == 'trade_in' }}">Trade-in</a>
+        <a href="{{ url_for('about') }}" class="{{ 'active' if request.endpoint == 'about' }}">О нас</a>
+        <a href="{{ url_for('contacts') }}" class="{{ 'active' if request.endpoint == 'contacts' }}">Контакты</a>
+      </nav>
+
+      <div class="header__actions">
+        <a class="icon-btn" href="{{ url_for('compare') }}" title="Сравнение">
+          <span aria-hidden="true">⇄</span>
+          <em class="badge-count" id="compare-count" {{ 'hidden' if not compare_count }}>{{ compare_count }}</em>
+        </a>
+        <a class="icon-btn" href="{{ url_for('favorites') }}" title="Избранное">
+          <span aria-hidden="true">♥</span>
+          <em class="badge-count" id="fav-count" {{ 'hidden' if not fav_count }}>{{ fav_count }}</em>
+        </a>
+        {% if current_user %}
+        {% if is_admin %}<a class="icon-btn" href="{{ url_for('admin_dashboard') }}" title="Админ-панель">⚙</a>{% endif %}
+        <span class="header__user" title="{{ current_user['email'] }}">{{ current_user['name'].split()[0] }}</span>
+        <form method="post" action="{{ url_for('logout') }}" style="display:inline;margin:0">
+          <input type="hidden" name="_csrf" value="{{ csrf_token }}">
+          <button class="btn btn--ghost btn--sm" type="submit">Выйти</button>
+        </form>
+        {% else %}
+        <a class="btn btn--ghost btn--sm" href="{{ url_for('login') }}">Войти</a>
+        <a class="btn btn--primary btn--sm header__reg" href="{{ url_for('register') }}">Регистрация</a>
+        {% endif %}
+        <button class="burger" id="burger" aria-label="Меню"><span></span><span></span><span></span></button>
+      </div>
+    </div>
+  </header>
+
+  {% with messages = get_flashed_messages(with_categories=true) %}
+  {% if messages %}
+  <div class="container">
+    <div class="flashes">
+      {% for category, message in messages %}
+      <div class="flash flash--{{ category }}">
+        <span>{{ message }}</span>
+        <button class="flash__close" aria-label="Закрыть">&times;</button>
+      </div>
+      {% endfor %}
+    </div>
+  </div>
+  {% endif %}
+  {% endwith %}
+
+  <main>
+    {% block content %}{% endblock %}
+  </main>
+
+  {% if compare_count > 1 %}
+  <div class="compare-bar">
+    <div class="container compare-bar__inner">
+      <span>В сравнении: <b>{{ compare_count }}</b></span>
+      <a class="btn btn--primary btn--sm" href="{{ url_for('compare') }}">Сравнить</a>
+      <form method="post" action="{{ url_for('compare_clear') }}">
+        <input type="hidden" name="_csrf" value="{{ csrf_token }}">
+        <button class="btn btn--ghost btn--sm" type="submit">Очистить</button>
+      </form>
+    </div>
+  </div>
+  {% endif %}
+
+  <footer class="footer">
+    <div class="container footer__grid">
+      <div>
+        <div class="logo logo--footer">
+          <span class="logo__mark">ПМ</span>
+          <span class="logo__text">Премиум<strong>Моторс</strong></span>
+        </div>
+        <p class="footer__text">Официальный автосалон полного цикла. Продажа, trade-in, кредитование и сервис более 10
+          лет.</p>
+      </div>
+      <div>
+        <h4>Разделы</h4>
+        <ul>
+          <li><a href="{{ url_for('index') }}">Главная</a></li>
+          <li><a href="{{ url_for('catalog') }}">Каталог автомобилей</a></li>
+          <li><a href="{{ url_for('about') }}">О компании</a></li>
+          <li><a href="{{ url_for('contacts') }}">Контакты</a></li>
+        </ul>
+      </div>
+      <div>
+        <h4>Покупателям</h4>
+        <ul>
+          <li><a href="{{ url_for('catalog', condition='Новый') }}">Новые автомобили</a></li>
+          <li><a href="{{ url_for('catalog', condition='С пробегом') }}">С пробегом</a></li>
+          <li><a href="{{ url_for('credit_page') }}">Кредитный калькулятор</a></li>
+          <li><a href="{{ url_for('trade_in') }}">Оценка trade-in</a></li>
+          <li><a href="{{ url_for('compare') }}">Сравнение моделей</a></li>
+        </ul>
+      </div>
+      <div>
+        <h4>Контакты</h4>
+        <ul>
+          <li>{{ contacts.address }}</li>
+          <li><a href="mailto:{{ contacts.email }}">{{ contacts.email }}</a></li>
+          <li><a href="tel:{{ contacts.phone_digits }}"><strong>{{ contacts.phone }}</strong></a></li>
+          <li>{{ contacts.work }}</li>
+        </ul>
+      </div>
+    </div>
+    <div class="footer__bottom">
+      <div class="container">
+        <span>© {{ current_year }} Автосалон «Премиум Моторс». Все права защищены.</span>
+        <span>Цены на сайте не являются публичной офертой.</span>
+      </div>
+    </div>
+  </footer>
+
+  <script>window.CSRF = {{ csrf_token | tojson }};</script>
+  <script src="{{ url_for('static', filename='js/main.js') }}"></script>
+  {% block scripts %}{% endblock %}
+</body>
+
+</html>

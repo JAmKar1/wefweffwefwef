@@ -1,0 +1,92 @@
+{% extends 'base.html' %}
+
+{% block title %}Trade-in — оценка автомобиля{% endblock %}
+
+{% block content %}
+<section class="page-head">
+  <div class="container">
+    <h1>Trade-in за 30 минут</h1>
+    <p>Оценим ваш автомобиль и засчитаем стоимость в счёт покупки нового</p>
+  </div>
+</section>
+
+<section class="section">
+  <div class="container tradein-layout">
+    <form method="get" class="panel" id="tradein-form">
+      <h2>Данные автомобиля</h2>
+
+      <div class="field">
+        <label for="brand">Марка</label>
+        <select id="brand" name="brand">
+          {% for b in brands %}
+          <option value="{{ b }}" {{ 'selected' if form.brand==b }}>{{ b }}</option>
+          {% endfor %}
+        </select>
+      </div>
+
+      <div class="field">
+        <label for="fuel">Топливо</label>
+        <select id="fuel" name="fuel">
+          {% for f in ['Бензин', 'Дизель', 'Гибрид', 'Электро'] %}
+          <option value="{{ f }}" {{ 'selected' if form.fuel==f }}>{{ f }}</option>
+          {% endfor %}
+        </select>
+      </div>
+
+      <div class="field">
+        <label for="year">Год выпуска: <span id="year-out">{{ form.year }}</span></label>
+        <input type="range" id="year" name="year" min="2005" max="2026" step="1" value="{{ form.year }}">
+      </div>
+
+      <div class="field">
+        <label for="mileage">Пробег: <span id="mileage-out">{{ form.mileage | number_format }} км</span></label>
+        <input type="range" id="mileage" name="mileage" min="0" max="400000" step="5000" value="{{ form.mileage }}">
+      </div>
+
+      <div class="field">
+        <label for="condition">Состояние</label>
+        <select id="condition" name="condition">
+          {% for c in ['Новый', 'С пробегом'] %}
+          <option value="{{ c }}" {{ 'selected' if form.condition==c }}>{{ c }}</option>
+          {% endfor %}
+        </select>
+      </div>
+
+      <button class="btn btn--primary btn--block" type="submit">Оценить</button>
+    </form>
+
+    <div class="panel panel--accent tradein-result">
+      <span class="tradein-result__label">Оценочная стоимость</span>
+      <strong class="tradein-result__value" id="tradein-value">{{ value | money }}</strong>
+      <p class="muted">
+        Класс марки: <span id="tradein-group">{{ {'premium': 'премиум', 'mid': 'средний', 'main': 'массовый'}[group] }}</span>.
+        Это предварительная оценка по среднерыночным данным.
+      </p>
+      <a class="btn btn--primary btn--block" href="{{ url_for('contacts') }}">Оценка в салоне</a>
+      <a class="btn btn--outline btn--block" id="tradein-find" href="{{ url_for('catalog', max_price=value) }}">
+        Подобрать авто на вырученные деньги
+      </a>
+    </div>
+  </div>
+</section>
+
+<section class="section section--alt">
+  <div class="container">
+    <div class="section__head">
+      <h2>Как проходит trade-in</h2>
+    </div>
+    <div class="grid grid--4">
+      {% for step in [
+      ('1. Оценка', 'Приезжаете в салон, оставляете автомобиль на диагностику.'),
+      ('2. Договор', 'Согласуем цену и подписываем договор купли-продажи.'),
+      ('3. Выбор', 'Подбираем новый автомобиль под вырученную сумму.'),
+      ('4. Сделка', 'Оформляем кредит и уезжаете на новом авто.')] %}
+      <div class="feature">
+        <h3>{{ step[0] }}</h3>
+        <p>{{ step[1] }}</p>
+      </div>
+      {% endfor %}
+    </div>
+  </div>
+</section>
+{% endblock %}

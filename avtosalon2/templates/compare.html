@@ -1,0 +1,84 @@
+{% extends 'base.html' %}
+
+{% block title %}Сравнение автомобилей — Автосалон{% endblock %}
+
+{% block content %}
+<section class="page-head">
+  <div class="container">
+    <h1>Сравнение автомобилей</h1>
+    <p>Сопоставьте до {{ max_cars }} моделей по ключевым характеристикам</p>
+  </div>
+</section>
+
+<section class="section">
+  <div class="container">
+    {% if cars|length < 2 %} <div class="empty">
+      <h3>{{ 'Добавьте ещё хотя бы один автомобиль' if cars|length == 1 else 'Выберите автомобили для сравнения' }}</h3>
+      <p>{% if cars|length == 1 %}Сейчас выбран: {{ cars[0].title }}. {% endif %}Нажмите «⇄» на карточке, чтобы добавить модель. Можно сравнить до {{ max_cars }}.</p>
+      <a class="btn btn--primary" href="{{ url_for('catalog') }}">Перейти в каталог</a>
+  </div>
+  {% else %}
+  <div class="table-wrap">
+    <table class="compare-table">
+      <thead>
+        <tr>
+          <th scope="col">Параметр</th>
+          {% for c in cars %}
+          <th scope="col">
+            <a href="{{ url_for('car_details', car_id=c.id) }}" class="compare-table__car">
+              <span class="compare-table__title">{{ c.title }}</span>
+              <span class="compare-table__price">{{ c.price | money }}</span>
+            </a>
+            <form method="post" action="{{ url_for('compare_toggle') }}">
+              <input type="hidden" name="_csrf" value="{{ csrf_token }}">
+              <input type="hidden" name="car_id" value="{{ c.id }}">
+              <button class="btn btn--ghost btn--sm" type="submit">Убрать</button>
+            </form>
+          </th>
+          {% endfor %}
+        </tr>
+      </thead>
+      <tbody>
+        {% for row in rows %}
+        <tr class="{{ 'is-diff' if row.is_diff }} {{ 'is-best' if row.best is not none }}">
+          <th scope="row">{{ row.label }}</th>
+          {% for value in row['values'] %}
+          <td class="{{ 'is-best' if row.best is not none and value == row.best }}">
+            {{ value | number_format if row.key in ('year', 'mileage', 'price', 'power') else value }}
+          </td>
+          {% endfor %}
+        </tr>
+        {% endfor %}
+        <tr>
+          <th scope="row">Действия</th>
+          {% for c in cars %}
+          <td>
+            <a class="btn btn--primary btn--sm btn--block"
+              href="{{ url_for('car_details', car_id=c.id) }}">Подробнее</a>
+            <form method="post" action="{{ url_for('order') }}">
+              <input type="hidden" name="_csrf" value="{{ csrf_token }}">
+              <input type="hidden" name="car_id" value="{{ c.id }}">
+              <input type="hidden" name="name" value="{{ current_user['name'] if current_user }}">
+              <input type="hidden" name="phone" value="{{ current_user['phone'] if current_user }}">
+              <button class="btn btn--ghost btn--sm btn--block" type="submit">Заявка</button>
+            </form>
+          </td>
+          {% endfor %}
+        </tr>
+      </tbody>
+    </table>
+  </div>
+
+  <div class="compare-actions">
+    <form method="post" action="{{ url_for('compare_clear') }}">
+      <input type="hidden" name="_csrf" value="{{ csrf_token }}">
+      <button class="btn btn--ghost" type="submit">Очистить сравнение</button>
+    </form>
+    {% if diffs %}
+    <span class="muted">Отличия: {{ diffs | join(', ') }}</span>
+    {% endif %}
+  </div>
+  {% endif %}
+  </div>
+</section>
+{% endblock %}

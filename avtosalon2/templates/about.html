@@ -1,0 +1,67 @@
+{% extends 'base.html' %}
+
+{% block title %}О компании — Автосалон{% endblock %}
+
+{% block content %}
+<section class="page-head">
+  <div class="container">
+    <h1>О компании</h1>
+    <p>Автосалон «Премиум Моторс» — официальный дилер полного цикла с 2014 года.</p>
+  </div>
+</section>
+
+<section class="section">
+  <div class="container">
+    <div class="about">
+      <div>
+        <h2>Кто мы</h2>
+        <p>Мы продаём автомобили с пробегом и новые модели, которые прошли предпродажную подготовку и диагностику по 120
+          пунктам. Каждый автомобиль в каталоге проверен на подъёмнике, а история обслуживания подтверждена сервисными
+          книжками.</p>
+        <p>Наша команда — 18 менеджеров, 9 механиков и 3 отдела оформления документов. Мы работаем без скрытых комиссий:
+          цена в карточке автомобиля финальная.</p>
+      </div>
+      <div class="about__numbers">
+        <div><strong>10+</strong><span>лет на рынке</span></div>
+        <div><strong>1 200+</strong><span>проданных авто</span></div>
+        <div><strong>120</strong><span>пунктов диагностики</span></div>
+        <div><strong>4.9</strong><span>оценка клиентов</span></div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section class="section section--alt">
+  <div class="container">
+    <div class="section__head">
+      <h2>Услуги</h2>
+    </div>
+    <div class="grid grid--4">
+      {% for title, text, badge in services %}
+      <div class="feature">
+        <h3>{{ title }}</h3>
+        <p>{{ text }}</p>
+        <span class="feature__badge">{{ badge }}</span>
+      </div>
+      {% endfor %}
+    </div>
+  </div>
+</section>
+
+<section class="section">
+  <div class="container">
+    <div class="section__head">
+      <h2>Новости</h2>
+    </div>
+    <div class="grid grid--3">
+      {% for n in news %}
+      <article class="news">
+        <time>{{ n.date }}</time>
+        <h3>{{ n.title }}</h3>
+        <p>{{ n.text }}</p>
+      </article>
+      {% endfor %}
+    </div>
+  </div>
+</section>
+{% endblock %}

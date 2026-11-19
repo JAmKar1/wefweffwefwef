@@ -1,0 +1,197 @@
+{% extends 'base.html' %}
+{% from '_macros.html' import car_card with context %}
+
+{% block title %}Каталог автомобилей — Автосалон{% endblock %}
+
+{% macro facet_group(name, title, facets, current, key='value') %}
+<fieldset class="filters__group">
+  <legend>{{ title }}</legend>
+  <div class="facets">
+    {% for f in facets %}
+      <label class="facet">
+        <input type="radio" name="{{ name }}" value="{{ f.value }}"
+               {{ 'checked' if current == f.value }}>
+        <span>{{ f.value }} <em>{{ f.count }}</em></span>
+      </label>
+    {% endfor %}
+    <label class="facet facet--any">
+      <input type="radio" name="{{ name }}" value="all" {{ 'checked' if not current or current == 'all' }}>
+      <span>Любые</span>
+    </label>
+  </div>
+</fieldset>
+{% endmacro %}
+
+{% block content %}
+<section class="page-head">
+  <div class="container">
+    <h1>Каталог автомобилей</h1>
+    <p>Найдено {{ pagination.total }} {{ pagination.total | plural('автомобиль,автомобиля,автомобилей') }}</p>
+  </div>
+</section>
+
+<section class="section">
+  <div class="container catalog">
+    <aside class="filters">
+      <form method="get" action="{{ url_for('catalog') }}" id="filters-form" data-live>
+        <div class="filters__group">
+          <label for="q">Поиск</label>
+          <input type="search" id="q" name="q" value="{{ request.args.get('q', '') }}"
+                 placeholder="Марка, модель, VIN">
+        </div>
+
+        <div class="filters__group">
+          <label>Цена, ₽</label>
+          <div class="filters__row">
+            <input type="number" name="min_price" min="0" step="100000"
+                   placeholder="от {{ (price_bounds[0] / 1000000) | round | int }} млн"
+                   value="{{ request.args.get('min_price', '') }}">
+            <input type="number" name="max_price" min="0" step="100000"
+                   placeholder="до {{ (price_bounds[1] / 1000000) | round | int }} млн"
+                   value="{{ request.args.get('max_price', '') }}">
+          </div>
+          {% set range_value = request.args.get('max_price') or price_bounds[1] %}
+          <div class="range">
+            <input type="range" id="price-range" min="{{ price_bounds[0] }}"
+                   max="{{ price_bounds[1] }}" step="50000" value="{{ range_value }}">
+            <output id="price-out">{{ range_value | money }}</output>
+          </div>
+        </div>
+
+        {{ facet_group('brand', 'Марка', f_brand, request.args.get('brand')) }}
+        {{ facet_group('body', 'Кузов', f_body, request.args.get('body')) }}
+        {{ facet_group('fuel', 'Топливо', f_fuel, request.args.get('fuel')) }}
+        {{ facet_group('transmission', 'Коробка', f_transmission, request.args.get('transmission')) }}
+        {{ facet_group('drive', 'Привод', f_drive, request.args.get('drive')) }}
+        {{ facet_group('condition', 'Состояние', f_condition, request.args.get('condition')) }}
+
+        <div class="filters__group">
+          <label for="min_year">Год выпуска</label>
+          <div class="filters__row">
+            <select id="min_year" name="min_year">
+              <option value="">от</option>
+              {% for y in range(year_bounds[1], year_bounds[0] - 1, -1) %}
+                <option value="{{ y }}" {{ 'selected' if request.args.get('min_year') == y|string }}>{{ y }}</option>
+              {% endfor %}
+            </select>
+            <select name="max_year">
+              <option value="">до</option>
+              {% for y in range(year_bounds[1], year_bounds[0] - 1, -1) %}
+                <option value="{{ y }}" {{ 'selected' if request.args.get('max_year') == y|string }}>{{ y }}</option>
+              {% endfor %}
+            </select>
+          </div>
+        </div>
+
+        <div class="filters__group">
+          <label for="max_mileage">Пробег до</label>
+          <select id="max_mileage" name="max_mileage">
+            <option value="">Любой</option>
+            {% for m in [10000, 25000, 50000, 80000, 150000] %}
+              <option value="{{ m }}" {{ 'selected' if request.args.get('max_mileage') == m|string }}>{{ m | number_format }} км</option>
+            {% endfor %}
+          </select>
+        </div>
+
+        <div class="filters__group">
+          <label for="min_power">Мощность от, л.с.</label>
+          <select id="min_power" name="min_power">
+            <option value="">Любая</option>
+            {% for p in [100, 150, 200, 250, 300] %}
+              <option value="{{ p }}" {{ 'selected' if request.args.get('min_power') == p|string }}>{{ p }} л.с.</option>
+            {% endfor %}
+          </select>
+        </div>
+
+        <label class="switch">
+          <input type="checkbox" name="only_available" value="1"
+                 {{ 'checked' if request.args.get('only_available') == '1' }}>
+          <span>Только в наличии</span>
+        </label>
+
+        <div class="filters__actions">
+          <button class="btn btn--primary btn--block" type="submit">Применить</button>
+          <a class="btn btn--ghost btn--block" href="{{ url_for('catalog') }}">Сбросить</a>
+        </div>
+      </form>
+    </aside>
+
+    <div class="catalog__content" id="catalog-content">
+      <div class="catalog__toolbar">
+        <form method="get" class="catalog__sort">
+          {% for key, value in request.args.items() %}
+            {% if key not in ('sort', 'page') %}
+              <input type="hidden" name="{{ key }}" value="{{ value }}">
+            {% endif %}
+          {% endfor %}
+          <label for="sort">Сортировка:</label>
+          <select id="sort" name="sort">
+            {% for value, title in [
+              ('price_asc', 'Цена: по возрастанию'),
+              ('price_desc', 'Цена: по убыванию'),
+              ('year_desc', 'Год: новее'),
+              ('mileage_asc', 'Пробег: меньше'),
+              ('power_desc', 'Мощность: больше'),
+              ('model_asc', 'По названию')] %}
+              <option value="{{ value }}" {{ 'selected' if request.args.get('sort', 'price_asc') == value }}>{{ title }}</option>
+            {% endfor %}
+          </select>
+          <noscript><button class="btn btn--ghost btn--sm" type="submit">ОК</button></noscript>
+        </form>
+        <span class="catalog__count" id="catalog-count">
+          {{ pagination.start }}–{{ pagination.end }} из {{ pagination.total }}
+        </span>
+      </div>
+
+      {% if active_filters %}
+      <div class="active-filters">
+        {% for chip in active_filters %}
+          <a class="active-filters__item" href="{{ url_for('catalog', **chip.value) }}">
+            {{ chip.label }} <span aria-hidden="true">&times;</span>
+          </a>
+        {% endfor %}
+        <a class="active-filters__reset" href="{{ url_for('catalog') }}">Сбросить всё</a>
+      </div>
+      {% endif %}
+
+      <div class="grid grid--2" id="catalog-grid">
+        {% for car in cars %}{{ car_card(car) }}{% endfor %}
+      </div>
+
+      {% if not cars %}
+        <div class="empty">
+          <h3>Ничего не найдено</h3>
+          <p>Попробуйте изменить параметры фильтра или сбросить его.</p>
+          <a class="btn btn--primary" href="{{ url_for('catalog') }}">Сбросить фильтры</a>
+        </div>
+      {% endif %}
+
+      {% if pagination.pages > 1 %}
+      <nav class="pagination" aria-label="Навигация по страницам">
+        {% if pagination.has_prev %}
+          <a class="pagination__btn" href="{{ url_for('catalog', page=pagination.prev, **page_args) }}">←</a>
+        {% else %}
+          <span class="pagination__btn is-disabled">←</span>
+        {% endif %}
+
+        {% for p in range(1, pagination.pages + 1) %}
+          {% if p == pagination.page %}
+            <span class="pagination__btn is-active">{{ p }}</span>
+          {% elif p <= 2 or p > pagination.pages - 2 or (p - pagination.page) | abs <= 1 %}
+            <a class="pagination__btn" href="{{ url_for('catalog', page=p, **page_args) }}">{{ p }}</a>
+          {% elif p == 3 or p == pagination.pages - 2 %}
+            <span class="pagination__dots">…</span>
+          {% endif %}
+        {% endfor %}
+
+        {% if pagination.has_next %}
+          <a class="pagination__btn" href="{{ url_for('catalog', page=pagination.next, **page_args) }}">→</a>
+        {% else %}
+          <span class="pagination__btn is-disabled">→</span>
+        {% endif %}
+      </nav>
+      {% endif %}
+    </div>
+  </div>
+</section>
+{% endblock %}

@@ -1,0 +1,65 @@
+{% extends 'base.html' %}
+{% block title %}Админ — дашборд{% endblock %}
+{% block content %}
+<section class="page-head">
+  <div class="container">
+    <h1>Админ-панель</h1>
+    <p>Сводка по автосалону</p>
+  </div>
+  <div class="container admin-nav">
+    <a class="chip" href="{{ url_for('admin_cars') }}">Автомобили</a>
+    <a class="chip" href="{{ url_for('admin_orders') }}">Заявки</a>
+    <a class="chip" href="{{ url_for('admin_reviews') }}">Отзывы</a>
+    <a class="chip" href="{{ url_for('admin_users') }}">Пользователи</a>
+    <a class="chip" href="{{ url_for('admin_news') }}">Новости</a>
+  </div>
+</section>
+
+<section class="section">
+  <div class="container">
+    <div class="grid grid--4">
+      <div class="feature">
+        <h3>В наличии</h3>
+        <p class="stat">{{ stats.cars }}</p>
+      </div>
+      <div class="feature">
+        <h3>Просмотров</h3>
+        <p class="stat">{{ stats.views }}</p>
+      </div>
+      <div class="feature">
+        <h3>Заявок</h3>
+        <p class="stat">{{ stats.orders }}</p>
+      </div>
+      <div class="feature">
+        <h3>Пользователей</h3>
+        <p class="stat">{{ stats.users }}</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section class="section section--alt">
+  <div class="container admin-two">
+    <div class="panel">
+      <h2>Последние заявки <a class="link small" href="{{ url_for('admin_orders') }}">все →</a></h2>
+      {% for o in orders %}
+      <div class="admin-item">
+        <b>{{ o['name'] }}</b> · {{ o['phone'] }} · {{ {'new':'новая','in_progress':'в работе','done':'закрыта'}.get(o['status'], o['status']) }}
+      </div>
+      {% else %}
+      <p>Заявок пока нет.</p>
+      {% endfor %}
+    </div>
+    <div class="panel">
+      <h2>Последние отзывы <a class="link small" href="{{ url_for('admin_reviews') }}">все →</a></h2>
+      {% for r in reviews %}
+      <div class="admin-item">
+        {{ r['rating'] }}★ · {{ r['author'] }} · {{ r['text'][:60] }}…
+      </div>
+      {% else %}
+      <p>Отзывов пока нет.</p>
+      {% endfor %}
+    </div>
+  </div>
+</section>
+{% endblock %}

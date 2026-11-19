@@ -1,0 +1,60 @@
+{% extends 'base.html' %}
+{% block title %}Новости — Админ — Премиум Моторс{% endblock %}
+{% block content %}
+<section class="section">
+  <div class="container">
+    <div class="admin-head">
+      <h1>Новости</h1>
+      <a class="btn btn--ghost" href="{{ url_for('admin_dashboard') }}">← Дашборд</a>
+    </div>
+
+    <div class="panel">
+      <h2>Новая публикация</h2>
+      <form method="post" class="form form--grid">
+        <input type="hidden" name="_csrf" value="{{ csrf_token }}">
+        <div class="field field--wide">
+          <label for="title">Заголовок *</label>
+          <input type="text" id="title" name="title" required>
+        </div>
+        <div class="field field--wide">
+          <label for="body">Текст *</label>
+          <textarea id="body" name="body" rows="4" required></textarea>
+        </div>
+        <button class="btn btn--primary" type="submit">Опубликовать</button>
+      </form>
+    </div>
+
+    <div class="panel">
+      <table class="admin-table">
+        <thead>
+          <tr>
+            <th>Заголовок</th>
+            <th>Текст</th>
+            <th>Действие</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for n in news %}
+          <tr>
+            <td>{{ n['title'] }}</td>
+            <td class="muted">{{ n['body'][:80] }}{% if n['body']|length > 80 %}…{% endif %}</td>
+            <td>
+              <form method="post">
+                <input type="hidden" name="_csrf" value="{{ csrf_token }}">
+                <input type="hidden" name="id" value="{{ n['id'] }}">
+                <input type="hidden" name="action" value="delete">
+                <button class="btn btn--danger btn--sm" type="submit">Удалить</button>
+              </form>
+            </td>
+          </tr>
+          {% else %}
+          <tr>
+            <td colspan="3">Новостей пока нет.</td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </div>
+</section>
+{% endblock %}

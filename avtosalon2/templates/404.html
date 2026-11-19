@@ -1,0 +1,17 @@
+{% extends 'base.html' %}
+
+{% block title %}Страница не найдена{% endblock %}
+
+{% block content %}
+<section class="section error-page">
+  <div class="container">
+    <span class="error-page__code">404</span>
+    <h1>Такой страницы нет</h1>
+    <p>Возможно, автомобиль уже продан или адрес введён с ошибкой.</p>
+    <div class="hero__actions">
+      <a class="btn btn--primary" href="{{ url_for('catalog') }}">В каталог</a>
+      <a class="btn btn--outline" href="{{ url_for('index') }}">На главную</a>
+    </div>
+  </div>
+</section>
+{% endblock %}

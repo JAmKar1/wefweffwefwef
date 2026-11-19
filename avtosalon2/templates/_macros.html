@@ -1,0 +1,68 @@
+{# Карточка автомобиля. Используется на главной, в каталоге, в избранном и в похожих. #}
+{% macro car_card(car) -%}
+{%- set accent = brand_accent(car.brand) -%}
+{%- set dark = brand_dark(car.brand) -%}
+{%- set is_fav = car.id in fav_ids -%}
+{%- set is_compared = car.id in compare_ids -%}
+<article class="card" style="--brand: {{ dark }}; --accent: {{ accent }};" data-car-id="{{ car.id }}">
+  <a class="card__media" href="{{ url_for('car_details', car_id=car.id) }}">
+    {% if car.photo %}
+    <img src="{{ url_for('static', filename='uploads/' ~ car.photo) }}" alt="{{ car.title }}" loading="lazy">
+    {% else %}
+    <div class="car-visual car-visual--{{ body_class(car.body) }}">
+      <span class="car-visual__body"></span>
+      <span class="car-visual__cabin"></span>
+      <span class="car-visual__wheel car-visual__wheel--left"></span>
+      <span class="car-visual__wheel car-visual__wheel--right"></span>
+    </div>
+    {% endif %}
+    <div class="card__badges">
+      {% if car.condition == 'Новый' %}<span class="badge badge--new">Новый</span>{% endif %}
+      {% if car.is_sold %}<span class="badge badge--sold">Продан</span>{% endif %}
+    </div>
+  </a>
+
+  <div class="card__tools">
+    <form method="post" action="{{ url_for('toggle_favorite', car_id=car.id) }}" class="js-fav" data-id="{{ car.id }}">
+      <input type="hidden" name="_csrf" value="{{ csrf_token }}">
+      <button class="tool {{ 'is-active' if is_fav }}" type="submit"
+        title="{{ 'Убрать из избранного' if is_fav else 'В избранное' }}">
+        <span aria-hidden="true">♥</span>
+      </button>
+    </form>
+    <form method="post" action="{{ url_for('compare_toggle') }}" class="js-compare" data-id="{{ car.id }}">
+      <input type="hidden" name="_csrf" value="{{ csrf_token }}">
+      <input type="hidden" name="car_id" value="{{ car.id }}">
+      <button class="tool {{ 'is-active' if is_compared }}" type="submit" title="Сравнить">
+        <span aria-hidden="true">⇄</span>
+      </button>
+    </form>
+  </div>
+
+  <div class="card__body">
+    <div class="card__head">
+      <h3><a href="{{ url_for('car_details', car_id=car.id) }}">{{ car.title }}</a></h3>
+      <span class="card__year">{{ car.year }}</span>
+    </div>
+    <div class="card__specs">
+      <span>{{ car.mileage | number_format }} км</span>
+      <span>{{ car.engine }}</span>
+      <span>{{ car.transmission }}</span>
+      <span>{{ car.drive }}</span>
+    </div>
+    <div class="card__foot">
+      <span class="card__price">{{ price_label(car.price) }}</span>
+      <a class="btn btn--ghost btn--sm" href="{{ url_for('car_details', car_id=car.id) }}">Подробнее</a>
+    </div>
+  </div>
+</article>
+{%- endmacro %}
+
+
+{# Строка характеристик для таблицы на карточке автомобиля #}
+{% macro spec_row(label, value, unit='') -%}
+<tr>
+  <th scope="row">{{ label }}</th>
+  <td>{{ value }}{% if unit %} {{ unit }}{% endif %}</td>
+</tr>
+{%- endmacro %}

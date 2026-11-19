@@ -1,0 +1,67 @@
+{% extends 'base.html' %}
+
+{% block title %}Контакты — Автосалон{% endblock %}
+
+{% block content %}
+<section class="page-head">
+  <div class="container">
+    <h1>Контакты</h1>
+    <p>Приезжайте в шоурум или оставьте заявку — перезвоним в течение 15 минут.</p>
+  </div>
+</section>
+
+<section class="section">
+  <div class="container contacts">
+    <div class="panel">
+      {% if sent %}
+      <h2>Спасибо, {{ name }}!</h2>
+      <p class="lead">Заявка отправлена. Менеджер свяжется с вами в рабочее время {{ contacts.work | lower }}.</p>
+      {% else %}
+      <h2>Форма обратной связи</h2>
+      <form method="post" class="form">
+        <input type="hidden" name="_csrf" value="{{ csrf_token }}">
+        <div class="field">
+          <label for="name">Имя *</label>
+          <input type="text" id="name" name="name" required minlength="2" placeholder="Иван" value="{{ form.get('name', '') }}">
+        </div>
+        <div class="field">
+          <label for="phone">Телефон *</label>
+          <input type="tel" id="phone" name="phone" required minlength="6" placeholder="+7 900 000-00-00" value="{{ form.get('phone', '') }}">
+        </div>
+        <div class="field">
+          <label for="email">E-mail</label>
+          <input type="email" id="email" name="email" placeholder="you@mail.ru" value="{{ form.get('email', '') }}">
+        </div>
+        <div class="field">
+          <label for="message">Сообщение</label>
+          <textarea id="message" name="message" rows="4" placeholder="Интересует кроссовер до 4 млн ₽">{{ form.get('message', '') }}</textarea>
+        </div>
+        <button class="btn btn--primary btn--lg" type="submit">Отправить</button>
+      </form>
+      {% endif %}
+    </div>
+
+    <div class="contacts__info">
+      <div class="info-card">
+        <h3>Адрес</h3>
+        <p>{{ contacts.address }}</p>
+      </div>
+      <div class="info-card">
+        <h3>Телефон</h3>
+        <p><a href="tel:{{ contacts.phone_digits }}">{{ contacts.phone }}</a></p>
+      </div>
+      <div class="info-card">
+        <h3>E-mail</h3>
+        <p><a href="mailto:{{ contacts.email }}">{{ contacts.email }}</a></p>
+      </div>
+      <div class="info-card">
+        <h3>Режим работы</h3>
+        <p>{{ contacts.work }}</p>
+      </div>
+      <div class="map" aria-label="Схема проезда">
+        <span>Схема проезда</span>
+      </div>
+    </div>
+  </div>
+</section>
+{% endblock %}
