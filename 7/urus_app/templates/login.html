@@ -1,0 +1,36 @@
+{% extends 'base.html' %}
+{% block title %}Вход — URUS{% endblock %}
+{% block body %}
+
+
+<div class="login-wrap">
+    <div class="login-card">
+        <div class="logo">URUS<span>Библиотечный учёт</span></div>
+        <p class="login-sub">Войдите, чтобы продолжить работу</p>
+
+        {% with messages = get_flashed_messages(with_categories=true) %}
+            {% for category, message in messages %}
+                <div class="flash flash--{{ category }}">{{ message }}</div>
+            {% endfor %}
+        {% endwith %}
+
+        <form method="post" action="{{ url_for('login') }}" id="loginForm">
+            <div class="field">
+                <label for="login">Логин</label>
+                <input type="text" id="login" name="login" required autofocus>
+            </div>
+            <div class="field">
+                <label for="password">Пароль</label>
+                <input type="password" id="password" name="password" required>
+            </div>
+
+            <button type="submit" class="btn btn--primary btn--block">Войти</button>
+        </form>
+
+        <p class="login-sub" style="margin-top:16px; margin-bottom:0;">
+            Нет аккаунта? <a href="{{ url_for('register') }}">Зарегистрироваться как читатель</a>
+        </p>
+    </div>
+</div>
+
+{% endblock %}
