@@ -1,0 +1,31 @@
+{% extends 'base.html' %}
+{% block title %}Добавить пользователя — URUS{% endblock %}
+{% block content %}
+<h1 class="page-title">Добавить пользователя</h1>
+<p class="page-subtitle">Новая учётная запись обязана сменить пароль при первом входе</p>
+
+<div class="card">
+    <form method="post" action="{{ url_for('add_user') }}">
+        <div class="field">
+            <label for="login">Логин</label>
+            <input type="text" id="login" name="login" maxlength="64" value="{{ form.login }}" required autofocus>
+        </div>
+        <div class="field">
+            <label for="password">Пароль (не менее 5 символов)</label>
+            <input type="password" id="password" name="password" minlength="5" required>
+        </div>
+        <div class="field">
+            <label for="role">Роль</label>
+            <select id="role" name="role">
+                <option value="user" {{ 'selected' if form.role == 'user' }}>Сотрудник</option>
+                <option value="admin" {{ 'selected' if form.role == 'admin' }}>Администратор</option>
+                <option value="reader" {{ 'selected' if form.role == 'reader' }}>Читатель</option>
+            </select>
+        </div>
+        <div class="form-actions">
+            <button type="submit" class="btn btn--primary">Создать</button>
+            <a href="{{ url_for('admin') }}" class="btn btn--ghost">Отмена</a>
+        </div>
+    </form>
+</div>
+{% endblock %}
